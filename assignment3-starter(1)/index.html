@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>1A3N Protein Structure Explorer</title>
+    <meta name="description" content="VR Protein Visualization - CSCI 181DV Assignment 4">
+
+    <!-- A-Frame v1.4.2 -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+
+    <!-- UI Styles -->
+    <link rel="stylesheet" href="css/ui.css">
+</head>
+<body>
+    <!-- ============================================================
+         Control Panel (HTML overlay - visible on desktop, hidden in VR)
+         Students: extend this panel for Tasks 3, 4, and 5
+         ============================================================ -->
+    <div id="controls">
+        <h2>Protein Explorer</h2>
+        <p id="status">Loading...</p>
+
+        <!-- Task 2c: View switching -->
+        <div class="control-group">
+            <h3>View Mode</h3>
+            <button id="btn-centroid" class="active" disabled>Centroid</button>
+            <button id="btn-ball-stick" disabled>Ball &amp; Stick</button>
+        </div>
+
+        <!-- Task 4: Chain toggles -->
+        <div class="control-group">
+            <h3>Chains</h3>
+            <label><input type="checkbox" class="chain-toggle" data-chain="A" checked> Chain A (α₁)</label>
+            <label><input type="checkbox" class="chain-toggle" data-chain="B" checked> Chain B (β₁)</label>
+            <label><input type="checkbox" class="chain-toggle" data-chain="C" checked> Chain C (α₂)</label>
+            <label><input type="checkbox" class="chain-toggle" data-chain="D" checked> Chain D (β₂)</label>
+        </div>
+
+        <!-- Task 4: Color scheme selector -->
+        <div class="control-group">
+            <h3>Color Scheme</h3>
+            <select id="color-scheme" disabled>
+                <option value="chain">By Chain</option>
+                <option value="element">By Element (CPK)</option>
+                <option value="residue">By Residue Type</option>
+            </select>
+        </div>
+
+        <!-- Task 3: Info panel for selected atom/residue -->
+        <div id="info-panel" class="control-group" style="display:none;">
+            <h3>Selection</h3>
+            <p id="info-content">Click a residue or atom to see details.</p>
+        </div>
+
+        <!-- Task 5: Advanced features controls -->
+        <div class="control-group">
+            <h3>Tools</h3>
+            <button id="btn-measure" disabled>Measure Distance</button>
+            <button id="btn-tour" disabled>Guided Tour</button>
+        </div>
+
+        <!-- Error display -->
+        <div id="error-display" class="error" style="display:none;"></div>
+    </div>
+
+    <!-- ============================================================
+         A-Frame Scene
+         ============================================================ -->
+    <a-scene
+        vr-mode-ui="enabled: true"
+        renderer="antialias: true; colorManagement: true"
+        loading-screen="dotsColor: #2196F3; backgroundColor: #111"
+    >
+        <!-- ==================== Assets ==================== -->
+        <!-- Preload data files here if needed -->
+
+        <!-- ==================== Lighting ==================== -->
+        <!--
+            Task 1: These are starter lights. Adjust them so the protein
+            is evenly lit without harsh shadows. Consider adding a
+            hemisphere light or adjusting intensities.
+        -->
+        <a-entity light="type: ambient; color: #BBB; intensity: 0.6"></a-entity>
+        <a-entity light="type: directional; color: #FFF; intensity: 0.5"
+                  position="1 2 1"></a-entity>
+        <a-entity light="type: directional; color: #AAF; intensity: 0.3"
+                  position="-1 -1 -1"></a-entity>
+
+        <!-- ==================== Camera Rig ==================== -->
+        <!--
+            Task 1: Camera with WASD + look-controls for desktop.
+            The rig is positioned to see the whole protein on load.
+            The protein center is approximately (15.1, 1.9, 13.6) in
+            angstrom coordinates. With a scale of 0.1, that becomes
+            (1.51, 0.19, 1.36) in scene units, and the protein is
+            about 7 units across.
+        -->
+        <a-entity id="camera-rig" position="1.5 0.2 12">
+            <a-camera
+                look-controls="pointerLockEnabled: false"
+                wasd-controls="acceleration: 10"
+                cursor="rayOrigin: mouse; fuse: false"
+                raycaster="objects: .clickable; far: 100"
+            >
+                <!-- Cursor reticle for VR gaze-based selection -->
+                <a-entity
+                    cursor="fuse: true; fuseTimeout: 1500"
+                    position="0 0 -1"
+                    geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
+                    material="color: #CCC; shader: flat"
+                    raycaster="objects: .clickable; far: 100"
+                    visible="false"
+                ></a-entity>
+            </a-camera>
+        </a-entity>
+
+        <!-- ==================== Protein Container ==================== -->
+        <!--
+            All protein geometry goes inside this entity.
+            Task 3: Attach rotation/zoom controls to this entity
+            so the whole protein can be rotated as a group.
+            Scale 0.1 converts angstroms to a reasonable VR size (~7m across).
+        -->
+        <a-entity id="protein-root" scale="0.1 0.1 0.1">
+            <!-- Task 2a: Centroid view entities will go here -->
+            <a-entity id="centroid-view"></a-entity>
+
+            <!-- Task 2b: Ball-and-stick view (InstancedMesh) will go here -->
+            <a-entity id="ball-stick-view" visible="false"></a-entity>
+        </a-entity>
+
+        <!-- ==================== Environment ==================== -->
+        <a-sky color="#111122"></a-sky>
+        <a-entity id="ground"
+            geometry="primitive: plane; width: 50; height: 50"
+            material="color: #0a0a1a; opacity: 0.5; transparent: true"
+            rotation="-90 0 0"
+            position="0 -3 0"
+        ></a-entity>
+
+    </a-scene>
+
+    <!-- ============================================================
+         JavaScript - load order matters!
+         protein-helpers.js must load before components.
+         ============================================================ -->
+    <script src="js/protein-helpers.js"></script>
+    <script src="js/components/vr-environment.js"></script>
+    <script src="js/components/structure-handler.js"></script>
+    <script src="js/components/interaction-manager.js"></script>
+    <script src="js/components/component-manager.js"></script>
+    <script src="js/components/advanced-features.js"></script>
+
+    <!-- Main application bootstrap -->
+    <script src="js/app.js"></script>
+</body>
+</html>

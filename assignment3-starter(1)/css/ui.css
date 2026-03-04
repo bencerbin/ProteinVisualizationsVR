@@ -1,0 +1,170 @@
+/**
+ * ui.css
+ * Styles for the HTML overlay control panel.
+ * This panel is visible on desktop and hidden when entering VR mode.
+ *
+ * Students: Feel free to modify these styles or add new ones.
+ * The panel uses a fixed position on the left side of the screen.
+ */
+
+/* ---- Control Panel Container ---- */
+#controls {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 9999;
+    background: rgba(15, 15, 25, 0.9);
+    color: #e0e0e0;
+    padding: 16px;
+    border-radius: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 13px;
+    width: 220px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+#controls h2 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding-bottom: 8px;
+}
+
+#controls h3 {
+    margin: 0 0 6px 0;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #90CAF9;
+}
+
+/* ---- Status Text ---- */
+#status {
+    margin: 0 0 12px 0;
+    font-size: 11px;
+    color: #aaa;
+}
+
+/* ---- Control Groups ---- */
+.control-group {
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.control-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* ---- Buttons ---- */
+#controls button {
+    display: inline-block;
+    padding: 6px 12px;
+    margin: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ccc;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s ease;
+}
+
+#controls button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+#controls button.active {
+    background: #2196F3;
+    color: #fff;
+    border-color: #2196F3;
+}
+
+#controls button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ---- Checkboxes ---- */
+#controls label {
+    display: block;
+    padding: 3px 0;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+#controls label:hover {
+    color: #fff;
+}
+
+#controls input[type="checkbox"] {
+    margin-right: 6px;
+    accent-color: #2196F3;
+}
+
+/* ---- Select Dropdown ---- */
+#controls select {
+    width: 100%;
+    padding: 5px 8px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #e0e0e0;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+#controls select:disabled {
+    opacity: 0.4;
+}
+
+/* ---- Info Panel ---- */
+#info-panel {
+    background: rgba(33, 150, 243, 0.1);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    border-radius: 4px;
+    padding: 8px;
+    margin-bottom: 14px;
+}
+
+#info-content {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* ---- Error Display ---- */
+.error {
+    background: rgba(244, 67, 54, 0.15);
+    border: 1px solid rgba(244, 67, 54, 0.4);
+    border-radius: 4px;
+    padding: 8px;
+    color: #EF9A9A;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+/* ---- Hide panel in VR mode ---- */
+.a-enter-vr #controls {
+    display: none;
+}
+
+/* ---- Scrollbar styling ---- */
+#controls::-webkit-scrollbar {
+    width: 4px;
+}
+
+#controls::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#controls::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+}
