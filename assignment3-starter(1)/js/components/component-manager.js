@@ -55,12 +55,41 @@ AFRAME.registerComponent('component-manager', {
      *     set their scale to 0 (hide) or restore it (show).
      */
     toggleChain: function (chainId, visible) {
-        // Centroid view: toggle individual sphere entities
-        const spheres = document.querySelectorAll(`#centroid-view [data-chain="${chainId}"]`);
-        spheres.forEach(s => s.setAttribute('visible', visible));
 
-        // TODO: Also handle ball-and-stick view if built
-    },
+    // ----- centroid view -----
+    const spheres = document.querySelectorAll(`#centroid-view [data-chain="${chainId}"]`);
+    spheres.forEach(s => s.setAttribute('visible', visible));
+
+    // ----- ball-and-stick view -----
+    const mesh = this.el.sceneEl.ballStickAtoms;
+    if (!mesh) return;
+
+    const vertices = window.proteinData.structure.vertices;
+    const chainAtoms = new Set(window.proteinData.chains[chainId].atoms);
+
+    const dummy = new THREE.Object3D();
+
+    for (let i = 0; i < vertices.length; i++) {
+
+        const v = vertices[i];
+
+        if (chainAtoms.has(v.id)) {
+
+            dummy.position.set(v.position[0], v.position[1], v.position[2]);
+
+            if (visible) {
+                dummy.scale.setScalar((VDW_RADII[v.element] || 1.5) * 0.3);
+            } else {
+                dummy.scale.setScalar(0);
+            }
+
+            dummy.updateMatrix();
+            mesh.setMatrixAt(i, dummy.matrix);
+        }
+    }
+
+    mesh.instanceMatrix.needsUpdate = true;
+},
 
     /**
      * TODO: Apply a color scheme to all visible entities.
@@ -93,6 +122,40 @@ AFRAME.registerComponent('component-manager', {
             }
             s.setAttribute('material', 'color', color);
         });
+
+         const mesh = this.el.sceneEl.ballStickAtoms;
+    const meta = this.el.sceneEl.ballStickAtomMeta;
+    if (!mesh || !meta) return;
+
+    const color = new THREE.Color();
+
+    for (let i = 0; i < meta.length; i++) {
+
+        const m = meta[i];
+        let hex;
+
+        switch (scheme) {
+
+            case 'chain':
+                hex = CHAIN_COLORS[m.chain] || '#CCCCCC';
+                break;
+
+            case 'residue':
+                hex = RESIDUE_COLORS[m.residueType] || '#CCCCCC';
+                break;
+
+            case 'element':
+                hex = CPK_COLORS[m.element] || '#CCCCCC';
+                break;
+
+            default:
+                hex = '#CCCCCC';
+        }
+
+        mesh.setColorAt(i, color.set(hex));
+    }
+
+    mesh.instanceColor.needsUpdate = true;
     },
 
     /**
@@ -117,5 +180,33 @@ AFRAME.registerComponent('component-manager', {
      */
     createLabels: function () {
 
-    }
-});
+    const container = document.getElementById('labels');
+    if (!container) return;
+
+    const components = window.proteinData.components;
+
+    Object.entries(components).forEach(([key, comp]) => {
+
+        if (comp.type === 'HOH') return; // skip water
+
+        const label = document.createElement('a-text');
+
+        label.setAttribute('value', comp.type);
+        label.setAttribute(
+            'position',
+            `${comp.center[0]} ${comp.center[1] + 2} ${comp.center[2]}`
+        );
+
+        label.setAttribute('align', 'center');
+        label.setAttribute('scale', '3 3 3');
+        label.setAttribute('color', '#FFFFFF');
+        label.setAttribute('look-at', '#camera-rig');
+
+        label.dataset.chain = comp.chain;
+        label.dataset.type = comp.type;
+
+        container.appendChild(label);
+    });
+
+    console.log("Labels created");
+}});

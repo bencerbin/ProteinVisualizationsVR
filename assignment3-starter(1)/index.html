@@ -57,6 +57,7 @@
             <h3>Tools</h3>
             <button id="btn-measure" disabled>Measure Distance</button>
             <button id="btn-tour" disabled>Guided Tour</button>
+            <button id="btn-labels" disabled>Toggle Labels</button>
         </div>
 
         <!-- Error display -->
@@ -67,6 +68,9 @@
          A-Frame Scene
          ============================================================ -->
     <a-scene
+        vr-environment
+        interaction-manager
+        component-manager
         vr-mode-ui="enabled: true"
         renderer="antialias: true; colorManagement: true"
         loading-screen="dotsColor: #2196F3; backgroundColor: #111"
@@ -80,11 +84,14 @@
             is evenly lit without harsh shadows. Consider adding a
             hemisphere light or adjusting intensities.
         -->
-        <a-entity light="type: ambient; color: #BBB; intensity: 0.6"></a-entity>
-        <a-entity light="type: directional; color: #FFF; intensity: 0.5"
-                  position="1 2 1"></a-entity>
-        <a-entity light="type: directional; color: #AAF; intensity: 0.3"
-                  position="-1 -1 -1"></a-entity>
+       <a-entity light="type: ambient; color: #ffffff; intensity: 0.8"></a-entity>
+
+        <!-- Hemisphere light (simulates sky + ground bounce) -->
+        <a-entity light="type: hemisphere; color: #ffffff; groundColor: #444; intensity: 1.0"></a-entity>
+
+        <!-- Soft directional key light -->
+        <a-entity light="type: directional; color: #ffffff; intensity: 0.9"
+                position="2 3 1"></a-entity>
 
         <!-- ==================== Camera Rig ==================== -->
         <!--
@@ -97,7 +104,7 @@
         -->
         <a-entity id="camera-rig" position="1.5 0.2 12">
             <a-camera
-                look-controls="pointerLockEnabled: false"
+                look-controls="pointerLockEnabled: false" 
                 wasd-controls="acceleration: 10"
                 cursor="rayOrigin: mouse; fuse: false"
                 raycaster="objects: .clickable; far: 100"
@@ -127,6 +134,9 @@
 
             <!-- Task 2b: Ball-and-stick view (InstancedMesh) will go here -->
             <a-entity id="ball-stick-view" visible="false"></a-entity>
+
+            <a-entity id="labels" visible="false"></a-entity>
+            
         </a-entity>
 
         <!-- ==================== Environment ==================== -->

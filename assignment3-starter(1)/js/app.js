@@ -75,19 +75,43 @@ function buildCentroidView(data) {
         return;
     }
 
+    Object.entries(data.components).forEach(([key, comp]) => {
+
+        const sphere = document.createElement('a-sphere');
+
+        // position
+        sphere.setAttribute(
+            'position',
+            `${comp.center[0]} ${comp.center[1]} ${comp.center[2]}`
+        );
+
+        // color by chain
+        sphere.setAttribute(
+            'color',
+            CHAIN_COLORS[comp.chain] || '#CCCCCC'
+        );
+
+        // radius by type
+        let radius = 1.0;
+        if (comp.type === 'HEM') radius = 1.5;
+        if (comp.type === 'HOH') radius = 0.5;
+
+        sphere.setAttribute('radius', radius);
+
+        // raycaster detection
+        sphere.setAttribute('class', 'clickable');
+
+        // metadata
+        sphere.dataset.residue = key;
+        sphere.dataset.chain = comp.chain;
+        sphere.dataset.type = comp.type;
+
+        container.appendChild(sphere);
+    });
+    
+
     // TODO: Implement centroid view rendering
-    // Example for ONE residue (replace with a loop over all components):
-    //
-    // const [key, comp] = Object.entries(data.components)[0];
-    // const sphere = document.createElement('a-sphere');
-    // sphere.setAttribute('position', `${comp.center[0]} ${comp.center[1]} ${comp.center[2]}`);
-    // sphere.setAttribute('radius', 1.0);
-    // sphere.setAttribute('color', CHAIN_COLORS[comp.chain] || '#CCCCCC');
-    // sphere.setAttribute('class', 'clickable');
-    // sphere.dataset.residue = key;
-    // sphere.dataset.chain = comp.chain;
-    // sphere.dataset.type = comp.type;
-    // container.appendChild(sphere);
+    
 
     console.log('TODO: buildCentroidView - render', Object.keys(data.components).length, 'residues');
 }
@@ -116,28 +140,62 @@ function buildBallStickView(data) {
     // TODO: Implement ball-and-stick rendering using InstancedMesh helpers
     //
     // Step 1: Build vertex lookup
-    // const vertexMap = {};
-    // data.structure.vertices.forEach(v => { vertexMap[v.id] = v; });
+    const vertexMap = {};
+    data.structure.vertices.forEach(v => { vertexMap[v.id] = v; });
     //
+
+    const atomMetadata = [];
     // Step 2: Prepare atom data
-    // const atoms = data.structure.vertices.map(v => ({
-    //     position: v.position,
-    //     color: CPK_COLORS[v.element] || '#CCCCCC',
-    //     radius: (VDW_RADII[v.element] || 1.5) * 0.3
-    // }));
+    const atoms = data.structure.vertices.map(v => {
+
+        
+    // determine chain
+    let chain = null;
+    for (const [chainId, chainData] of Object.entries(data.chains)) {
+        if (chainData.atoms.includes(v.id)) {
+            chain = chainId;
+            break;
+        }
+    }
+
+    // determine residue type
+    let residueType = null;
+    for (const comp of Object.values(data.components)) {
+        if (comp.atoms.includes(v.id)) {
+            residueType = comp.type;
+            break;
+        }
+    }
+
+    atomMetadata.push({
+        chain,
+        residueType,
+        element: v.element
+    });
+
+    return {
+        position: v.position,
+        color: CPK_COLORS[v.element] || '#CCCCCC',
+        radius: (VDW_RADII[v.element] || 1.5) * 0.3
+    };
+    });
     //
     // Step 3: Prepare bond data
-    // const bonds = data.structure.connections.map(c => ({
-    //     from: vertexMap[c.from].position,
-    //     to: vertexMap[c.to].position,
-    //     color: '#555555'
-    // }));
+    const bonds = data.structure.connections.map(c => ({
+        from: vertexMap[c.from].position,
+        to: vertexMap[c.to].position,
+        color: '#555555'
+    }));
     //
     // Step 4: Create and add meshes
-    // const atomMesh = createInstancedAtoms(atoms);
-    // const bondMesh = createInstancedBonds(bonds);
-    // container.object3D.add(atomMesh);
-    // container.object3D.add(bondMesh);
+    const atomMesh = createInstancedAtoms(atoms);
+    const bondMesh = createInstancedBonds(bonds, 0.10);
+    container.object3D.add(atomMesh);
+    container.object3D.add(bondMesh);
+
+    const scene = document.querySelector('a-scene');
+    scene.ballStickAtoms = atomMesh;
+    scene.ballStickAtomMeta = atomMetadata;
 
     console.log('TODO: buildBallStickView - render', data.structure.vertices.length, 'atoms');
 }
@@ -178,15 +236,52 @@ function enableControls() {
     const colorSelect = document.getElementById('color-scheme');
     colorSelect.disabled = false;
     colorSelect.addEventListener('change', function () {
+
+        const scene = document.querySelector('a-scene');
+        const manager = scene.components['component-manager'];
+
+        if (manager) {
+                manager.applyColorScheme(colorSelect.value);
+            }
+
         // TODO: Implement color scheme switching
         console.log('TODO: switch color scheme to', colorSelect.value);
     });
+
+    // ---- Task 4: Label toggle ----
+        const btnLabels = document.getElementById('btn-labels');
+        btnLabels.disabled = false;
+
+        let labelsBuilt = false;
+
+        btnLabels.addEventListener('click', function () {
+
+            const scene = document.querySelector('a-scene');
+            const manager = scene.components['component-manager'];
+            const labelContainer = document.getElementById('labels');
+
+            if (!labelsBuilt) {
+                manager.createLabels();
+                labelsBuilt = true;
+            }
+
+            const visible = labelContainer.getAttribute('visible');
+            labelContainer.setAttribute('visible', !visible);
+        });
 
     // ---- Task 4: Chain toggles ----
     document.querySelectorAll('.chain-toggle').forEach(function (checkbox) {
         checkbox.addEventListener('change', function () {
             const chain = this.dataset.chain;
             const visible = this.checked;
+
+            const scene = document.querySelector('a-scene');
+            const manager = scene.components['component-manager'];
+
+            if (manager) {
+                manager.toggleChain(chain, visible);
+            }
+
             // TODO: Show/hide entities belonging to this chain
             console.log('TODO: toggle chain', chain, visible);
         });
