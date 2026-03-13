@@ -288,18 +288,53 @@ function enableControls() {
     });
 
     // ---- Task 5: Measurement tool ----
-    const btnMeasure = document.getElementById('btn-measure');
-    btnMeasure.disabled = false;
-    btnMeasure.addEventListener('click', function () {
+
         // TODO: Toggle measurement mode
-        console.log('TODO: toggle measurement mode');
-    });
+        const btnMeasure = document.getElementById('btn-measure');
+btnMeasure.disabled = false;
+
+btnMeasure.addEventListener('click', function () {
+
+            const scene = document.querySelector('a-scene');
+            const features = scene.components['advanced-features'];
+
+            if (!features) return;
+
+            const currentMode = features.data.toolMode;
+
+            if (currentMode === 'measure') {
+                scene.setAttribute('advanced-features', 'toolMode', 'none');
+                btnMeasure.classList.remove('active');
+                console.log('Measurement mode OFF');
+                features.clearMeasurements();
+            } else {
+                scene.setAttribute('advanced-features', 'toolMode', 'measure');
+                btnMeasure.classList.add('active');
+                console.log('Measurement mode ON');
+            }
+        });    
 
     // ---- Task 5: Guided tour ----
     const btnTour = document.getElementById('btn-tour');
     btnTour.disabled = false;
     btnTour.addEventListener('click', function () {
         // TODO: Start guided tour animation
+        const scene = document.querySelector('a-scene');
+        const features = scene.components['advanced-features'];
+
+        if(!features) return;
+
+        if(features.data.viewMode =="normal") {
+            btnTour.classList.add('active');
+            scene.setAttribute('advanced-features', 'viewMode', 'tour');
+            features.startTour();
+        }
+        else {
+            btnTour.classList.remove('active');
+            scene.setAttribute('advanced-features', 'viewMode', 'normal');
+        }
+
+
         console.log('TODO: start guided tour');
     });
 }

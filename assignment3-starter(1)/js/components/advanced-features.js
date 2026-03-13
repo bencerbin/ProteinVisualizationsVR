@@ -35,8 +35,8 @@ AFRAME.registerComponent('advanced-features', {
         console.log('advanced-features component initialized');
 
         // TODO: Setup your chosen advanced features
-        // this.setupMeasurement();
-        // this.setupTour();
+         this.setupMeasurement();
+         this.setupTour();
         // this.setupClipping();
         // this.setupRibbon();
     },
@@ -59,9 +59,98 @@ AFRAME.registerComponent('advanced-features', {
      *   - Allow clearing measurements
      */
     setupMeasurement: function () {
-        this.measurePoints = [];
-        this.measureLines = [];
-    },
+
+    this.measurePoints = [];
+    this.measureLines = [];
+    this.measureLabels = [];
+
+    const scene = this.el.sceneEl;
+
+    scene.addEventListener('click', (evt) => {
+
+        if (this.data.toolMode !== 'measure') return;
+
+        const target = evt.detail.intersectedEl;
+
+        if (target && target.dataset.residue) {
+            this.handleAtomClick(target);
+        }
+
+    });
+},
+
+handleAtomClick: function(atomEl) {
+
+    const pos = atomEl.object3D.position.clone();
+    this.measurePoints.push(pos);
+
+    // first click -> store only
+    if (this.measurePoints.length < 2) return;
+
+    const a = this.measurePoints[0];
+    const b = this.measurePoints[1];
+
+    // distance formula
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    const dz = a.z - b.z;
+
+    const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+    this.drawMeasurement(a, b, distance);
+
+    // reset for next measurement
+    this.measurePoints = [];
+},
+
+drawMeasurement: function(a, b, distance) {
+
+    const scene = this.el.sceneEl;
+
+    // create line
+    const line = document.createElement('a-entity');
+
+    line.setAttribute('line', {
+        start: `${a.x} ${a.y} ${a.z}`,
+        end: `${b.x} ${b.y} ${b.z}`,
+        color: '#FFD700'
+    });
+
+    const root = document.getElementById('protein-root');
+    root.appendChild(line);
+    this.measureLines.push(line);
+
+    // midpoint for label
+    const mid = {
+        x: (a.x + b.x) / 2,
+        y: (a.y + b.y) / 2,
+        z: (a.z + b.z) / 2
+    };
+
+    const label = document.createElement('a-entity');
+
+    label.setAttribute('position', `${mid.x} ${mid.y} ${mid.z}`);
+    label.setAttribute('text', {
+        value: distance.toFixed(2) + " Å",
+        color: "#FFD700",
+        align: "center",
+        width: 4
+    });
+
+    root.appendChild(label);
+    console.log(distance);
+    this.measureLabels.push(label);
+},
+
+clearMeasurements: function() {
+
+    this.measureLines.forEach(line => line.remove());
+    this.measureLabels.forEach(label => label.remove());
+
+    this.measureLines = [];
+    this.measureLabels = [];
+    this.measurePoints = [];
+},
 
     // ================================================================
     // Feature 2: Guided Tour
@@ -90,73 +179,86 @@ AFRAME.registerComponent('advanced-features', {
      *       so divide angstrom coordinates by 10.
      */
     setupTour: function () {
+        this.cameraRig = document.getElementById('camera-rig');
+
+
+        //NOTE: I know nothing about chemistry (especially not this advanced) so I asked ChatGPT for the descriptions. 
         this.tourStops = [
-            { name: 'Overview', position: '1.5 0.2 12', target: '1.5 0.2 1.4' },
-            { name: 'Heme A', position: '1.6 1.0 2.5', target: '1.57 0.94 1.24' },
-            { name: 'Heme B', position: '1.3 -0.5 2.7', target: '1.31 -0.66 1.39' },
-            // TODO: Add more stops
-        ];
+        {
+            name: 'Overview',
+            position: '1.5 0.2 12',
+            target: '1.5 0.2 1.4',
+            description: 'Hemoglobin is a tetramer composed of two alpha and two beta subunits. Each subunit contains a heme group capable of binding oxygen.'
+        },
+        {
+            name: 'Heme A',
+            position: '1.6 1.0 2.5',
+            target: '1.57 0.94 1.24',
+            description: 'This is the heme group of an alpha chain. The iron atom in the center of the heme binds oxygen molecules in red blood cells.'
+        },
+        {
+            name: 'Heme B',
+            position: '1.3 -0.5 2.7',
+            target: '1.31 -0.66 1.39',
+            description: 'This heme group belongs to a beta chain. Structural differences between alpha and beta chains help regulate oxygen binding.'
+        }
+    ];
         this.currentStop = 0;
-    },
+        this.el.setAttribute('advanced-features', 'viewMode', 'normal');    },
 
-    // ================================================================
-    // Feature 3: Clipping Plane
-    // ================================================================
+    startTour: function () {
 
-    /**
-     * TODO: Implement a clipping plane that slices through the protein.
-     *
-     * Hints:
-     *   - Use Three.js clipping planes on the material:
-     *     renderer.clippingPlanes = [new THREE.Plane(normal, constant)];
-     *   - Or per-material: material.clippingPlanes = [plane];
-     *   - Enable clipping: renderer.localClippingEnabled = true;
-     *   - Add a slider to move the plane along one axis
-     *   - Optionally visualize the plane itself as a semi-transparent quad
-     *
-     * Example:
-     *   const renderer = this.el.sceneEl.renderer;
-     *   renderer.localClippingEnabled = true;
-     *   const plane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 5);
-     *   // Apply to materials of your meshes
-     */
-    setupClipping: function () {
+    this.currentStop = 0;
+this.el.setAttribute('advanced-features', 'viewMode', 'tour');    this.goToStop();
 
-    },
+},
 
-    // ================================================================
-    // Feature 4: Ribbon Visualization (Bonus)
-    // ================================================================
+    goToStop: function() {
 
-    /**
-     * TODO: Render a ribbon/tube along the protein backbone.
-     *
-     * Steps:
-     *   1. For each chain, extract backbone C-alpha positions:
-     *      const caPositions = extractBackbone(window.proteinData, 'A');
-     *
-     *   2. Generate smooth spline:
-     *      const splinePoints = catmullRomSpline(caPositions, 10);
-     *
-     *   3. Convert to Three.js curve:
-     *      const curvePoints = splinePoints.map(p => new THREE.Vector3(p[0], p[1], p[2]));
-     *      const curve = new THREE.CatmullRomCurve3(curvePoints);
-     *
-     *   4. Create tube geometry:
-     *      const tubeGeom = new THREE.TubeGeometry(curve, curvePoints.length, 0.5, 8, false);
-     *      const tubeMat = new THREE.MeshPhongMaterial({ color: CHAIN_COLORS[chainId] });
-     *      const tube = new THREE.Mesh(tubeGeom, tubeMat);
-     *
-     *   5. Add to scene:
-     *      document.getElementById('protein-root').object3D.add(tube);
-     *
-     *   6. Repeat for all four chains.
-     *
-     * This is the most challenging feature. The spline helper functions
-     * are provided for you - the main work is wiring them together and
-     * getting the visual result to look good.
-     */
-    setupRibbon: function () {
 
+        if (this.currentStop >= this.tourStops.length) {
+            
+            console.log("Tour finished");
+
+            this.data.viewMode = "normal";
+
+            document.getElementById('info-panel').style.display = 'none';
+
+            return;
     }
+
+
+           const stop = this.tourStops[this.currentStop];
+        const rig = this.cameraRig;
+
+        const panel = document.getElementById('info-panel');
+        const content = document.getElementById('info-content');
+
+        panel.style.display = 'block';
+        content.innerHTML = `
+        <strong>${stop.name}</strong><br><br>
+        ${stop.description}
+    `;
+
+        console.log("Tour stop:", stop.name);
+
+        rig.setAttribute('animation__tour', {
+            property: 'position',
+            to: stop.position,
+            dur: 2000,
+            easing: 'easeInOutQuad'
+        });
+
+        rig.setAttribute('look-at', stop.target);
+
+        rig.addEventListener('animationcomplete__tour', () => {
+
+            setTimeout(() => {
+                this.currentStop++;
+                this.goToStop();
+            }, 2000);
+
+        }, { once: true });
+        }
+
 });
